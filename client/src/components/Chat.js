@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 import InfoBar from './InfoBar';
 import Input from './Input';
 import Messages from './Messages';
+import TextContainer from './TextContainer'
 
 
 import '../css/Chat.css'
@@ -17,6 +18,7 @@ const Chat = ({ location }) => {
     const [room, setRoom] = useState('');
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState([])
+    const [users, setUsers] = useState([]);
     const ENDPOINT = 'localhost:5000'
 
 
@@ -25,12 +27,15 @@ const Chat = ({ location }) => {
 
         //create conneciton
         socket = io(ENDPOINT)
+        console.log('SOCKET', socket)
 
         setName(name)
         setRoom(room)
 
-        socket.emit('join', { name, room }, () => {
-    
+        socket.emit('join', { name, room }, (error) => {
+            if(error) {
+                alert(error);
+              }
         });
 
         return () => {
@@ -41,12 +46,17 @@ const Chat = ({ location }) => {
 
     }, [ENDPOINT, location.search]);
 
-    //handle messages
+    //handle messages and roomdata
     useEffect(() => {
         socket.on('message', (message) => {
             setMessages([...messages, message]);
         })
-    }, [messages]);
+
+        socket.on('roomData', ({users}) => {
+            console.log('userssss', users)
+            setUsers(users)
+        })
+    }, [messages, users]);
 
     //function for sending messages
 
@@ -57,8 +67,6 @@ const Chat = ({ location }) => {
         }
     }
 
-    console.log(message, messages)
-
     return(
         <div className="outerContainer">
             <div className="container">
@@ -66,6 +74,7 @@ const Chat = ({ location }) => {
                 <Messages messages={messages} name={name}/>
                 <Input message={message} setMessage={setMessage} sendMessage={sendMessage}/>
             </div>
+            <TextContainer users={users}/>
         </div>
     )
 }
